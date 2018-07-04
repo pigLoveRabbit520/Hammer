@@ -12,11 +12,6 @@ import (
 
 const Port = 60000
 
-func checkError(err error) {
-	if err != nil {
-		panic(err.Error())
-	}
-}
 
 //保存所有的客户端连接
 var addrs *utils.Set
@@ -26,10 +21,10 @@ func main() {
 	addrs = utils.NewSet()
 
 	ServerAddr, err := net.ResolveUDPAddr("udp", ":"+strconv.Itoa(Port))
-	checkError(err)
+	utils.CheckError(err)
 
 	conn, err := net.ListenUDP("udp", ServerAddr)
-	checkError(err)
+	utils.CheckError(err)
 	defer conn.Close()
 
 	fmt.Println("服务端启动成功，绑定端口:", Port)
@@ -39,7 +34,7 @@ func main() {
 		for {
 			time.Sleep(time.Second)
 			n, RemoteAddr, err := conn.ReadFromUDP(buf[:])
-			checkError(err)
+			utils.CheckError(err)
 
 			p := pack.Pack{}
 

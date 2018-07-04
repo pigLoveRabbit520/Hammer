@@ -14,12 +14,6 @@ import (
 
 const Server = "noxue.com:60000"
 
-func checkError(err error) {
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
 var addrs *utils.Set
 
 func main() {
@@ -29,22 +23,22 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 	port := rand.Intn(1000)
 	ClientAddr, err := net.ResolveUDPAddr("udp", ":"+strconv.Itoa(port+2000))
-	checkError(err)
+	utils.CheckError(err)
 
 	conn, err := net.ListenUDP("udp", ClientAddr)
-	checkError(err)
+	utils.CheckError(err)
 	defer conn.Close()
 
 	fmt.Println("客户端启动成功，绑定端口：", port+2000)
 
 	RemoteAddr, err := net.ResolveUDPAddr("udp", Server)
-	checkError(err)
+	utils.CheckError(err)
 	//连接服务器，发送加入聊天的包
 	pk := pack.Pack{pack.Join, []byte("hello")}
 	bs := pk.Encode()
 
 	_, err = conn.WriteToUDP(bs, RemoteAddr)
-	checkError(err)
+	utils.CheckError(err)
 
 	//不断接收udp包
 	go func() {
@@ -53,7 +47,7 @@ func main() {
 		for {
 			time.Sleep(time.Second)
 			n, RemoteAddr, err := conn.ReadFromUDP(buf[:])
-			checkError(err)
+			utils.CheckError(err)
 
 			p := pack.Pack{}
 
@@ -65,12 +59,12 @@ func main() {
 			//如果有新人加入，就向他发个打洞的消息
 			if p.Type == pack.Join {
 				addr, err := net.ResolveUDPAddr("udp", string(p.Data[0:]))
-				checkError(err)
+				utils.CheckError(err)
 				addrs.Add(string(p.Data[:]))
 				pk := pack.Pack{pack.Hole, []byte("hello")}
 				bs := pk.Encode()
 				_, err = conn.WriteToUDP(bs, addr)
-				checkError(err)
+				utils.CheckError(err)
 				fmt.Println("有新人加入，向新人", addr, "打了个洞")
 
 			} else if p.Type == pack.JoinReturn { //加入后，会返回当前所有在线的主机，要一一对他们打洞
@@ -88,9 +82,9 @@ func main() {
 					addrs.Add(host)
 					pk = pack.Pack{pack.Hole, []byte("hello")}
 					bs = pk.Encode()
-					checkError(err)
+					utils.CheckError(err)
 					_, err = conn.WriteToUDP(bs, addr)
-					checkError(err)
+					utils.CheckError(err)
 					fmt.Println("首次加入，向用户", addr, "打洞")
 				}
 			} else if p.Type == pack.Msg {
@@ -112,7 +106,7 @@ func main() {
 
 		for _, v := range addrs.Elements() {
 			tAddr, err := net.ResolveUDPAddr("udp", v.(string))
-			checkError(err)
+			utils.CheckError(err)
 			conn.WriteToUDP(pk.Encode(), tAddr)
 		}
 		num += 1
